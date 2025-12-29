@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>MotoQuiz - Partes Mecánicas | YOG</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f4f4f4; text-align:center; }
+    .game { background:#fff; padding:20px; margin:40px auto; width:460px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,.1);}    
+    img { max-width:120px; margin-bottom:10px; }
+    button { margin:8px; padding:10px 15px; cursor:pointer; }
+    .score { font-weight:bold; margin-top:10px; }
+    .lives { color:red; font-weight:bold; }
+    input { padding:8px; margin-bottom:10px; width:90%; }
+    table { width:100%; margin-top:15px; border-collapse: collapse; }
+    th, td { border:1px solid #ddd; padding:6px; font-size:14px; }
+    th { background:#eee; }
+  </style>
+</head>
+<body>
+  <div class="game">
+    <img src="logo-yog.png" alt="Logo YOG">
+    <h2>🏍️ MotoQuiz</h2>
+
+    <input type="text" id="username" placeholder="Ingresa tu nombre" />
+    <button onclick="startGame()">Iniciar juego</button>
+
+    <div id="gameArea" style="display:none;">
+      <p><strong>Jugador:</strong> <span id="playerName"></span></p>
+      <p id="question"></p>
+      <div id="options"></div>
+      <p class="score">Puntos: <span id="score">0</span></p>
+      <p><strong>Récord personal:</strong> <span id="record">0</span></p>
+      <p class="lives">Errores restantes: <span id="lives">3</span></p>
+
+      <h3>🏆 Ranking interno</h3>
+      <table>
+        <thead>
+          <tr><th>#</th><th>Nombre</th><th>Puntos</th></tr>
+        </thead>
+        <tbody id="ranking"></tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+const questions = [
+  { q: "¿Qué parte transmite la potencia del motor a la rueda?", a: "Cadena", o: ["Cadena","Bujía","Freno"] },
+  { q: "¿Qué componente genera la chispa?", a: "Bujía", o: ["Carburador","Bujía","Escape"] },
+  { q: "¿Qué parte reduce la velocidad de la moto?", a: "Freno", o: ["Embrague","Freno","Filtro de aire"] },
+  { q: "¿Qué sistema mezcla aire y gasolina?", a: "Carburador", o: ["Radiador","Carburador","Amortiguador"] }
+];
+
+let score = 0;
+let index = 0;
+let lives = 3;
+let player = '';
+let ranking = JSON.parse(localStorage.getItem('rankingMotoQuiz')) || [];
+
+function startGame() {
+  const name = document.getElementById('username').value;
+  if (!name) {
+    alert('Por favor ingresa tu nombre');
+    return;
+  }
+  player = name;
+  document.getElementById('playerName').innerText = name;
+  document.getElementById('gameArea').style.display = 'block';
+  loadRanking();
+  loadQuestion();
+}
+
+function loadQuestion() {
+  const q = questions[index];
+  document.getElementById('question').innerText = q.q;
+  const optionsDiv = document.getElementById('options');
+  optionsDiv.innerHTML = '';
+  q.o.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.innerText = opt;
+    btn.onclick = () => checkAnswer(opt);
+    optionsDiv.appendChild(btn);
+  });
+}
+
+function checkAnswer(opt) {
+  if (opt === questions[index].a) {
+    score++;
+  } else {
+    lives--;
+  }
+
+  document.getElementById('score').innerText = score;
+  document.getElementById('lives').innerText = lives;
+
+  if (lives <= 0) {
+    saveRanking();
+    alert('❌ Juego terminado. Tu puntaje fue: ' + score);
+    resetGame();
+    return;
+  }
+
+  index = (index + 1) % questions.length;
+  loadQuestion();
+}
+
+function saveRanking() {
+  ranking.push({ name: player, score: score });
+  ranking.sort((a,b) => b.score - a.score);
+  ranking = ranking.slice(0,10); // Top 10
+  localStorage.setItem('rankingMotoQuiz', JSON.stringify(ranking));
+  loadRanking();
+}
+
+function loadRanking() {
+  const tbody = document.getElementById('ranking');
+  tbody.innerHTML = '';
+  ranking.forEach((r, i) => {
+    const row = `<tr><td>${i+1}</td><td>${r.name}</td><td>${r.score}</td></tr>`;
+    tbody.innerHTML += row;
+  });
+}
+
+function resetGame() {
+  score = 0;
+  lives = 3;
+  index = 0;
+  document.getElementById('score').innerText = score;
+  document.getElementById('lives').innerText = lives;
+  loadQuestion();
+}
+</script>
+</body>
+</html>
